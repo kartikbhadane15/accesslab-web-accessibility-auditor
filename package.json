@@ -1,0 +1,33 @@
+{
+  "name": "accesslab-web-accessibility-auditor",
+  "version": "1.0.0",
+  "description": "Developer-support web accessibility auditing tool aligned with WCAG 2.1/2.2 and axe-core",
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "test": "playwright test",
+    "test:a11y": "playwright test tests/accessibility"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kartikbhadane15/accesslab-web-accessibility-auditor.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/kartikbhadane15/accesslab-web-accessibility-auditor/issues"
+  },
+  "homepage": "https://github.com/kartikbhadane15/accesslab-web-accessibility-auditor#readme",
+  "dependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@playwright/test": "^1.64.0",
+    "axe-core": "^4.14.0",
+    "next": "^16.4.0",
+    "playwright": "^1.64.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  }
+}
