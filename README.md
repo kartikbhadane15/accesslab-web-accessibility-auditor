@@ -14,6 +14,18 @@ AccessLab is a portfolio-ready web accessibility developer tool designed to brid
 
 ---
 
+## Visual Interface Preview
+
+| Audit Dashboard & Finding Inspection | Landing Page Overview |
+|:---:|:---:|
+| ![AccessLab Audit Dashboard](./public/screenshots/accesslab_dashboard.png) | ![AccessLab Landing Page](./public/screenshots/accesslab_home.png) |
+
+| Interactive Fixture Comparison | 12-Point Manual Testing Checklist |
+|:---:|:---:|
+| ![AccessLab Forms Demo](./public/screenshots/accesslab_demos.png) | ![AccessLab Manual Checklist](./public/screenshots/accesslab_checklist.png) |
+
+---
+
 ## 2. Problem Statement
 
 Many teams treat web accessibility as an afterthought or rely on superficial automated "score badges" and third-party script overlay widgets. In reality:
