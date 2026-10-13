@@ -317,15 +317,35 @@ function DashboardContent() {
                 style={{
                   width: '100%',
                   maxWidth: '650px',
-                  padding: '0.625rem 0.85rem',
-                  borderRadius: 'var(--radius-sm)',
+                  padding: '0.75rem 1rem',
+                  borderRadius: 'var(--radius-md)',
                   border: '1px solid var(--border-strong)',
-                  fontSize: '0.95rem',
+                  fontSize: '0.98rem',
                   background: 'var(--bg-surface)',
                   color: 'var(--text-primary)',
+                  boxShadow: 'var(--shadow-sm)',
                 }}
               />
-              <div style={{ background: 'var(--bg-subtle)', padding: '0.75rem 1rem', borderRadius: 'var(--radius-sm)', maxWidth: '650px', fontSize: '0.88rem', marginTop: '0.75rem' }}>
+              <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>Quick Presets:</span>
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  style={{ padding: '0.2rem 0.6rem', fontSize: '0.78rem', minHeight: '30px', borderRadius: 'var(--radius-full)' }}
+                  onClick={() => setLiveUrl('https://useastra.in/hiring')}
+                >
+                  useastra.in/hiring
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  style={{ padding: '0.2rem 0.6rem', fontSize: '0.78rem', minHeight: '30px', borderRadius: 'var(--radius-full)' }}
+                  onClick={() => setLiveUrl('https://example.com')}
+                >
+                  example.com
+                </button>
+              </div>
+              <div style={{ background: 'var(--bg-subtle)', padding: '0.75rem 1rem', borderRadius: 'var(--radius-md)', maxWidth: '650px', fontSize: '0.88rem', marginTop: '0.75rem', borderLeft: '3px solid var(--accent-primary)' }}>
                 <p style={{ margin: 0 }}>
                   <strong>Live Audit:</strong> Fetches live HTML and runs authentic axe-core (WCAG 2.1/2.2 AA) rules inside an isolated browser document sandbox.
                 </p>
