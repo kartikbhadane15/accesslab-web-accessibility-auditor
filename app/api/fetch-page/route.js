@@ -90,6 +90,9 @@ export async function POST(request) {
 
     let html = await response.text();
 
+    // Strip external <script> tags to prevent CORS errors, tracking scripts, and unwanted page redirects
+    html = html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+
     // Inject base href tag so relative stylesheets, fonts, and images load correctly
     if (html.includes('<head>')) {
       html = html.replace('<head>', `<head><base href="${parsedUrl.href}">`);

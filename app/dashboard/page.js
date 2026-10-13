@@ -166,17 +166,20 @@ function DashboardContent() {
         } catch (evalErr) {
           const script = iframeDoc.createElement('script');
           script.textContent = axe.source;
-          (iframeDoc.head || iframeDoc.documentElement).appendChild(script);
+          (iframeDoc.head || iframeDoc.documentElement || iframeDoc.body).appendChild(script);
         }
       }
 
       const activeAxe = win.axe || axe;
-      const axeResults = await activeAxe.run(win.axe ? undefined : iframeDoc.body, {
+      const scanOptions = {
         runOnly: {
           type: 'tag',
           values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'],
         },
-      });
+      };
+
+      // In axe-core, pass options as the first argument without undefined
+      const axeResults = await activeAxe.run(scanOptions);
 
       let hostName = validUrl;
       try {
