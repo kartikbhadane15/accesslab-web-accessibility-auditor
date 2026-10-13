@@ -407,12 +407,12 @@ function DashboardContent() {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(175px, 1fr))', gap: '1rem' }}>
             <SummaryCard
               title="Violations"
               value={currentScan.summary.totalViolations}
               description="Definitive automated failures"
-              badgeVariant={currentScan.summary.totalViolations > 0 ? 'critical' : 'minor'}
+              badgeVariant={currentScan.summary.totalViolations > 0 ? 'critical' : 'passes'}
             />
             <SummaryCard
               title="Critical"
@@ -442,7 +442,7 @@ function DashboardContent() {
               title="Passes"
               value={currentScan.summary.passesCount}
               description="Evaluated rules passing"
-              badgeVariant="minor"
+              badgeVariant="passes"
             />
           </div>
         </section>
