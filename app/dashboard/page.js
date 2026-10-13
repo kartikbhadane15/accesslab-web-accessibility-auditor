@@ -7,7 +7,6 @@ import FindingsTable from '../../components/FindingsTable';
 import ScanStatus from '../../components/ScanStatus';
 import EmptyState from '../../components/EmptyState';
 import { DEMO_ROUTES } from '../../lib/scan/scanTypes';
-import { normalizeAxeResults } from '../../lib/scan/normalizeResults';
 import { exportScanAsJSON, exportScanAsCSV, triggerDownload } from '../../lib/report/exportReport';
 
 const STORAGE_KEY_RECENT = 'accesslab_recent_scans_v1';
@@ -16,8 +15,6 @@ function DashboardContent() {
   const searchParams = useSearchParams();
   const initialTarget = searchParams.get('target') || DEMO_ROUTES[0].path;
 
-  const [scanMode, setScanMode] = useState('fixture'); // 'fixture' | 'custom'
-  const [customUrl, setCustomUrl] = useState('https://example.com');
   const [selectedTarget, setSelectedTarget] = useState(initialTarget);
   const [scanStatus, setScanStatus] = useState('idle'); // 'idle' | 'running' | 'completed' | 'failed'
   const [currentScan, setCurrentScan] = useState(null);
@@ -50,7 +47,6 @@ function DashboardContent() {
     const urlTarget = searchParams.get('target');
     if (urlTarget) {
       setSelectedTarget(urlTarget);
-      setScanMode('fixture');
     }
   }, [searchParams]);
 
@@ -96,108 +92,6 @@ function DashboardContent() {
     }
   };
 
-  const runCustomScan = async (urlToScan) => {
-    const rawUrl = (urlToScan || customUrl || '').trim();
-    if (!rawUrl) {
-      setErrorMessage('Please enter a valid website URL.');
-      setScanStatus('failed');
-      return;
-    }
-
-    let validUrl = rawUrl;
-    if (!validUrl.startsWith('http://') && !validUrl.startsWith('https://')) {
-      validUrl = `https://${validUrl}`;
-      setCustomUrl(validUrl);
-    }
-
-    setScanStatus('running');
-    setErrorMessage('');
-
-    let iframe = null;
-
-    try {
-      const response = await fetch('/api/fetch-page', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: validUrl }),
-      });
-
-      let resData;
-      try {
-        resData = await response.json();
-      } catch (jsonErr) {
-        throw new Error(`Server returned HTTP ${response.status} (${response.statusText || 'Unable to fetch page'}).`);
-      }
-
-      if (!response.ok) {
-        throw new Error(resData?.error || 'Failed to fetch external website.');
-      }
-
-      // Create an offscreen isolated iframe for authentic in-browser axe evaluation
-      iframe = document.createElement('iframe');
-      iframe.style.position = 'fixed';
-      iframe.style.left = '-9999px';
-      iframe.style.top = '0';
-      iframe.style.width = '1280px';
-      iframe.style.height = '800px';
-      iframe.style.opacity = '0';
-      iframe.style.pointerEvents = 'none';
-      document.body.appendChild(iframe);
-
-      await new Promise((resolve) => {
-        iframe.onload = resolve;
-        iframe.srcdoc = resData.html;
-        setTimeout(resolve, 2000);
-      });
-
-      const axeModule = await import('axe-core');
-      const axe = axeModule.default || axeModule;
-
-      const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
-      if (!iframeDoc) {
-        throw new Error('Could not access DOM context of fetched page.');
-      }
-
-      const axeResults = await axe.run(iframeDoc, {
-        runOnly: {
-          type: 'tag',
-          values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'],
-        },
-      });
-
-      let hostName = validUrl;
-      try {
-        hostName = new URL(validUrl).hostname;
-      } catch {}
-
-      const normalized = normalizeAxeResults(axeResults, {
-        pageUrl: validUrl,
-        pageName: hostName,
-        scanId: `scan-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-      });
-
-      setCurrentScan(normalized);
-      setScanStatus('completed');
-
-      setRecentScans((prev) => {
-        const filtered = prev.filter((s) => s.id !== normalized.id && s.pageUrl !== normalized.pageUrl);
-        const updated = [normalized, ...filtered].slice(0, 5);
-        try {
-          localStorage.setItem(STORAGE_KEY_RECENT, JSON.stringify(updated));
-        } catch (e) {}
-        return updated;
-      });
-    } catch (err) {
-      console.error('Custom scan error:', err);
-      setScanStatus('failed');
-      setErrorMessage(err.message || 'Custom audit encountered an error.');
-    } finally {
-      if (iframe && iframe.parentNode) {
-        iframe.parentNode.removeChild(iframe);
-      }
-    }
-  };
-
   const handleExportJSON = () => {
     if (!currentScan) return;
     const blob = exportScanAsJSON(currentScan);
@@ -223,7 +117,7 @@ function DashboardContent() {
         </div>
         <h1>Audit Dashboard</h1>
         <p style={{ maxWidth: '850px', fontSize: '1.05rem' }}>
-          Execute authentic axe-core accessibility scans against local WCAG test fixtures or any public website URL. Results preserve exact engine severities, rule IDs, and failure summaries without synthetic inflation.
+          Select an authorized demo test fixture to execute a real axe-core scan in a headless Chromium browser. Results preserve exact engine severities, rule IDs, and failure summaries without synthetic inflation.
         </p>
       </header>
 
@@ -233,100 +127,50 @@ function DashboardContent() {
           Scan Launcher
         </h2>
 
-        {/* Audit Mode Switcher */}
-        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.25rem' }}>
-          <button
-            type="button"
-            className={`btn btn-sm ${scanMode === 'fixture' ? 'btn-primary' : 'btn-secondary'}`}
-            onClick={() => setScanMode('fixture')}
-            aria-pressed={scanMode === 'fixture'}
-          >
-            🧪 Built-in Test Fixtures
-          </button>
-          <button
-            type="button"
-            className={`btn btn-sm ${scanMode === 'custom' ? 'btn-primary' : 'btn-secondary'}`}
-            onClick={() => setScanMode('custom')}
-            aria-pressed={scanMode === 'custom'}
-          >
-            🌐 Custom Website URL
-          </button>
-        </div>
-
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-          {scanMode === 'fixture' ? (
-            <div>
-              <label htmlFor={targetSelectId} style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, marginBottom: '0.35rem' }}>
-                Select Local Demo Fixture to Audit:
-              </label>
-              <select
-                id={targetSelectId}
-                value={selectedTarget}
-                onChange={(e) => setSelectedTarget(e.target.value)}
-                style={{
-                  width: '100%',
-                  maxWidth: '650px',
-                  padding: '0.625rem 0.85rem',
-                  borderRadius: 'var(--radius-sm)',
-                  border: '1px solid var(--border-strong)',
-                  fontSize: '0.95rem',
-                  background: 'var(--bg-surface)',
-                  color: 'var(--text-primary)',
-                }}
-              >
-                {DEMO_ROUTES.map((route) => (
-                  <option key={route.path} value={route.path}>
-                    {route.name} ({route.category})
-                  </option>
-                ))}
-              </select>
+          <div>
+            <label htmlFor={targetSelectId} style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, marginBottom: '0.35rem' }}>
+              Select Local Demo Fixture to Audit:
+            </label>
+            <select
+              id={targetSelectId}
+              value={selectedTarget}
+              onChange={(e) => setSelectedTarget(e.target.value)}
+              style={{
+                width: '100%',
+                maxWidth: '650px',
+                padding: '0.625rem 0.85rem',
+                borderRadius: 'var(--radius-sm)',
+                border: '1px solid var(--border-strong)',
+                fontSize: '0.95rem',
+                background: 'var(--bg-surface)',
+                color: 'var(--text-primary)',
+              }}
+            >
+              {DEMO_ROUTES.map((route) => (
+                <option key={route.path} value={route.path}>
+                  {route.name} ({route.category})
+                </option>
+              ))}
+            </select>
+          </div>
 
-              <div style={{ background: 'var(--bg-subtle)', padding: '0.75rem 1rem', borderRadius: 'var(--radius-sm)', maxWidth: '650px', fontSize: '0.88rem', marginTop: '0.75rem' }}>
-                <p style={{ margin: 0 }}>
-                  <strong>Fixture Scope:</strong> {selectedRouteObj.description}
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div>
-              <label htmlFor="custom-url-input" style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, marginBottom: '0.35rem' }}>
-                Enter Public Website URL to Audit:
-              </label>
-              <input
-                id="custom-url-input"
-                type="url"
-                value={customUrl}
-                onChange={(e) => setCustomUrl(e.target.value)}
-                placeholder="https://example.com"
-                style={{
-                  width: '100%',
-                  maxWidth: '650px',
-                  padding: '0.625rem 0.85rem',
-                  borderRadius: 'var(--radius-sm)',
-                  border: '1px solid var(--border-strong)',
-                  fontSize: '0.95rem',
-                  background: 'var(--bg-surface)',
-                  color: 'var(--text-primary)',
-                }}
-              />
-              <div style={{ background: 'var(--bg-subtle)', padding: '0.75rem 1rem', borderRadius: 'var(--radius-sm)', maxWidth: '650px', fontSize: '0.88rem', marginTop: '0.75rem' }}>
-                <p style={{ margin: 0 }}>
-                  <strong>Live Web Audit:</strong> Fetches HTML and runs authentic axe-core (WCAG 2.1/2.2 AA) rules inside an isolated browser document sandbox.
-                </p>
-              </div>
-            </div>
-          )}
+          <div style={{ background: 'var(--bg-subtle)', padding: '0.75rem 1rem', borderRadius: 'var(--radius-sm)', maxWidth: '650px', fontSize: '0.88rem' }}>
+            <p style={{ margin: 0 }}>
+              <strong>Fixture Scope:</strong> {selectedRouteObj.description}
+            </p>
+          </div>
 
           <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
             <button
               type="button"
               className="btn btn-primary"
               disabled={scanStatus === 'running'}
-              onClick={() => (scanMode === 'fixture' ? runScan(selectedTarget) : runCustomScan(customUrl))}
+              onClick={() => runScan(selectedTarget)}
             >
               {scanStatus === 'running' ? (
                 <>
-                  <span aria-hidden="true">⏳</span> Running axe-core Audit...
+                  <span aria-hidden="true">⏳</span> Scanning with Chromium...
                 </>
               ) : (
                 <>
@@ -356,7 +200,7 @@ function DashboardContent() {
       <ScanStatus
         status={scanStatus}
         error={errorMessage}
-        targetName={scanMode === 'custom' ? customUrl : selectedRouteObj.name}
+        targetName={selectedRouteObj.name}
       />
 
       {/* Summary Cards */}
