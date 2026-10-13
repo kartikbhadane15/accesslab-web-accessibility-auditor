@@ -150,15 +150,28 @@ function DashboardContent() {
         setTimeout(resolve, 2000);
       });
 
-      const axeModule = await import('axe-core');
-      const axe = axeModule.default || axeModule;
-
-      const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
-      if (!iframeDoc) {
+      const win = iframe.contentWindow;
+      const iframeDoc = iframe.contentDocument || win?.document;
+      if (!win || !iframeDoc) {
         throw new Error('Could not access document frame of fetched website.');
       }
 
-      const axeResults = await axe.run(iframeDoc, {
+      const axeModule = await import('axe-core');
+      const axe = axeModule.default || axeModule;
+
+      // Inject axe into the iframe's realm so document & window.Node belong to the same frame
+      if (!win.axe) {
+        try {
+          win.eval(axe.source);
+        } catch (evalErr) {
+          const script = iframeDoc.createElement('script');
+          script.textContent = axe.source;
+          (iframeDoc.head || iframeDoc.documentElement).appendChild(script);
+        }
+      }
+
+      const activeAxe = win.axe || axe;
+      const axeResults = await activeAxe.run(win.axe ? undefined : iframeDoc.body, {
         runOnly: {
           type: 'tag',
           values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'],
