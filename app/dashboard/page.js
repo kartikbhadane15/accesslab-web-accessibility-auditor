@@ -62,10 +62,15 @@ function DashboardContent() {
         body: JSON.stringify({ targetPath: target }),
       });
 
-      const data = await response.json();
+      let data;
+      try {
+        data = await response.json();
+      } catch (jsonErr) {
+        throw new Error(`Server returned HTTP ${response.status} (${response.statusText || 'Unable to parse response'}).`);
+      }
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to complete scan.');
+        throw new Error(data?.error || `Scan failed with status ${response.status}.`);
       }
 
       setCurrentScan(data);
