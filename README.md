@@ -6,7 +6,7 @@
 
 ## 1. Project Overview & Links
 
-AccessLab is a portfolio-ready web accessibility developer tool designed to bridge the gap between automated linting and real-world human accessibility. It executes genuine `axe-core` audits via Playwright against controlled test fixtures, dissects DOM elements, reproduces barriers, and provides verified remediation guidance alongside an interactive 12-point manual review checklist.
+AccessLab is a production-ready web accessibility developer tool designed to bridge the gap between automated linting and real-world human accessibility. It executes genuine `axe-core` audits via Playwright against controlled test fixtures, dissects DOM elements, reproduces barriers, and provides verified remediation guidance alongside an interactive 12-point manual review checklist.
 
 - **Repository**: [https://github.com/kartikbhadane15/accesslab-web-accessibility-auditor](https://github.com/kartikbhadane15/accesslab-web-accessibility-auditor)
 - **Primary Standards**: WCAG 2.1 & 2.2 Conformance Levels A & AA, Section 508, WAI-ARIA 1.2
